@@ -1,0 +1,1728 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Premium Task Manager</title>
+    <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Playfair+Display:wght@600;700;800&family=Poppins:wght@400;500;600;700&display=swap');
+        
+        * {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+        }
+
+        body {
+            background: #0a0a0a;
+            background-image: 
+                radial-gradient(at 0% 0%, rgba(139, 100, 70, 0.2) 0px, transparent 50%),
+                radial-gradient(at 100% 100%, rgba(107, 78, 61, 0.15) 0px, transparent 50%),
+                radial-gradient(at 50% 50%, rgba(26, 20, 16, 0.6) 0px, transparent 80%),
+                radial-gradient(circle at 20% 80%, rgba(168, 122, 90, 0.1) 0px, transparent 40%);
+            min-height: 100vh;
+            position: relative;
+            overflow-x: hidden;
+        }
+
+        /* Animated gradient overlay */
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: 
+                linear-gradient(45deg, 
+                    transparent 0%, 
+                    rgba(139, 100, 70, 0.05) 25%, 
+                    transparent 50%, 
+                    rgba(107, 78, 61, 0.05) 75%, 
+                    transparent 100%);
+            background-size: 400% 400%;
+            animation: gradientShift 15s ease infinite;
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        @keyframes gradientShift {
+            0%, 100% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+        }
+
+        /* Subtle grid pattern */
+        body::after {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-image: 
+                repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(139, 100, 70, 0.02) 2px, rgba(139, 100, 70, 0.02) 4px),
+                repeating-linear-gradient(90deg, transparent, transparent 2px, rgba(139, 100, 70, 0.02) 2px, rgba(139, 100, 70, 0.02) 4px);
+            pointer-events: none;
+            z-index: 1;
+        }
+
+        #root {
+            position: relative;
+            z-index: 2;
+        }
+
+        /* Floating particles */
+        .particles {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 1;
+        }
+
+        .particle {
+            position: absolute;
+            width: 3px;
+            height: 3px;
+            background: radial-gradient(circle, rgba(168, 122, 90, 0.6), transparent);
+            border-radius: 50%;
+            animation: float-particle 20s infinite;
+            opacity: 0;
+        }
+
+        @keyframes float-particle {
+            0% {
+                transform: translateY(100vh) translateX(0) scale(0);
+                opacity: 0;
+            }
+            10% {
+                opacity: 1;
+            }
+            90% {
+                opacity: 1;
+            }
+            100% {
+                transform: translateY(-100vh) translateX(100px) scale(1);
+                opacity: 0;
+            }
+        }
+
+        .glass-card {
+            background: rgba(18, 14, 11, 0.9);
+            backdrop-filter: blur(40px) saturate(200%);
+            -webkit-backdrop-filter: blur(40px) saturate(200%);
+            border: 1px solid rgba(139, 100, 70, 0.3);
+            box-shadow: 
+                0 8px 32px rgba(0, 0, 0, 0.5),
+                0 0 0 1px rgba(255, 255, 255, 0.03) inset,
+                0 0 60px rgba(139, 100, 70, 0.1);
+            transition: all 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            overflow: hidden;
+            transform-style: preserve-3d;
+            perspective: 1000px;
+        }
+
+        .glass-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -150%;
+            width: 150%;
+            height: 100%;
+            background: linear-gradient(
+                90deg,
+                transparent,
+                rgba(168, 122, 90, 0.15),
+                transparent
+            );
+            transition: left 0.8s ease;
+        }
+
+        .glass-card:hover::before {
+            left: 150%;
+        }
+
+        .glass-card::after {
+            content: '';
+            position: absolute;
+            top: -50%;
+            right: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle, rgba(168, 122, 90, 0.15) 0%, transparent 70%);
+            opacity: 0;
+            transition: opacity 0.6s ease;
+            animation: rotate-gradient 20s linear infinite;
+        }
+
+        @keyframes rotate-gradient {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .glass-card:hover::after {
+            opacity: 1;
+        }
+
+        .glass-card:hover {
+            background: rgba(22, 17, 13, 0.95);
+            border-color: rgba(168, 122, 90, 0.6);
+            transform: translateY(-8px) scale(1.02);
+            box-shadow: 
+                0 35px 80px rgba(0, 0, 0, 0.8),
+                0 0 100px rgba(139, 100, 70, 0.3),
+                0 0 0 1px rgba(255, 255, 255, 0.1) inset,
+                0 20px 60px rgba(168, 122, 90, 0.2);
+        }
+
+        /* 3D Tilt Effect */
+        .glass-card.tilt {
+            transform-style: preserve-3d;
+        }
+
+        /* Glassmorphism shine effect */
+        .glass-shine {
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(
+                90deg,
+                transparent,
+                rgba(255, 255, 255, 0.1),
+                transparent
+            );
+            transform: skewX(-20deg);
+            animation: shine 8s ease-in-out infinite;
+        }
+
+        @keyframes shine {
+            0%, 100% { left: -100%; }
+            50% { left: 200%; }
+        }
+
+        .task-checkbox {
+            appearance: none;
+            width: 28px;
+            height: 28px;
+            border: 2.5px solid #8b6446;
+            border-radius: 9px;
+            cursor: pointer;
+            transition: all 0.5s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+            position: relative;
+            background: rgba(0, 0, 0, 0.4);
+            box-shadow: 
+                0 2px 8px rgba(0, 0, 0, 0.3),
+                inset 0 1px 3px rgba(0, 0, 0, 0.2);
+        }
+
+        .task-checkbox:hover {
+            border-color: #c89470;
+            box-shadow: 
+                0 0 25px rgba(168, 122, 90, 0.5),
+                0 0 50px rgba(139, 100, 70, 0.3),
+                inset 0 0 10px rgba(168, 122, 90, 0.2);
+            transform: scale(1.15) rotate(5deg);
+            background: rgba(139, 100, 70, 0.1);
+        }
+
+        .task-checkbox:checked {
+            background: linear-gradient(135deg, #c89470 0%, #a87a5a 25%, #8b6446 50%, #6b4e3d 100%);
+            border-color: #c89470;
+            box-shadow: 
+                0 0 30px rgba(168, 122, 90, 0.8),
+                0 0 60px rgba(139, 100, 70, 0.5),
+                inset 0 2px 10px rgba(0, 0, 0, 0.4),
+                inset 0 -1px 3px rgba(255, 255, 255, 0.2);
+            animation: checkboxPulse 0.6s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+        }
+
+        @keyframes checkboxPulse {
+            0%, 100% { 
+                transform: scale(1) rotate(0deg); 
+                box-shadow: 
+                    0 0 30px rgba(168, 122, 90, 0.8),
+                    0 0 60px rgba(139, 100, 70, 0.5);
+            }
+            25% { 
+                transform: scale(1.3) rotate(5deg); 
+                box-shadow: 
+                    0 0 50px rgba(168, 122, 90, 1),
+                    0 0 100px rgba(139, 100, 70, 0.8);
+            }
+            50% { 
+                transform: scale(1.1) rotate(-3deg); 
+            }
+            75% { 
+                transform: scale(1.25) rotate(2deg); 
+            }
+        }
+
+        .task-checkbox:checked::after {
+            content: '✓';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%) scale(0) rotate(-180deg);
+            color: white;
+            font-size: 18px;
+            font-weight: bold;
+            animation: checkmarkPop 0.5s cubic-bezier(0.68, -0.55, 0.265, 1.55) 0.1s forwards;
+            text-shadow: 
+                0 2px 4px rgba(0, 0, 0, 0.4),
+                0 0 10px rgba(255, 255, 255, 0.3);
+            filter: drop-shadow(0 0 5px rgba(255, 255, 255, 0.5));
+        }
+
+        @keyframes checkmarkPop {
+            0% { 
+                transform: translate(-50%, -50%) scale(0) rotate(-180deg); 
+            }
+            50% { 
+                transform: translate(-50%, -50%) scale(1.3) rotate(10deg); 
+            }
+            100% { 
+                transform: translate(-50%, -50%) scale(1) rotate(0deg); 
+            }
+        }
+
+        .notification {
+            animation: slideInRight 0.6s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+        }
+
+        @keyframes slideInRight {
+            from {
+                transform: translateX(500px) rotate(10deg);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0) rotate(0deg);
+                opacity: 1;
+            }
+        }
+
+        @keyframes fadeOut {
+            from {
+                opacity: 1;
+                transform: translateX(0) scale(1);
+            }
+            to {
+                opacity: 0;
+                transform: translateX(500px) scale(0.8);
+            }
+        }
+
+        .fade-out {
+            animation: fadeOut 0.5s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #b8895f 0%, #a87a5a 25%, #8b6446 50%, #6b4e3d 100%);
+            transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            overflow: hidden;
+            box-shadow: 
+                0 4px 20px rgba(139, 100, 70, 0.4),
+                0 0 0 1px rgba(255, 255, 255, 0.1) inset,
+                0 0 40px rgba(168, 122, 90, 0.2);
+            transform-style: preserve-3d;
+        }
+
+        .btn-primary::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: linear-gradient(
+                45deg,
+                transparent 30%,
+                rgba(255, 255, 255, 0.3) 50%,
+                transparent 70%
+            );
+            transform: rotate(45deg);
+            transition: all 0.6s ease;
+        }
+
+        .btn-primary:hover::before {
+            left: 100%;
+        }
+
+        .btn-primary::after {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(135deg, transparent, rgba(255, 255, 255, 0.1));
+            opacity: 0;
+            transition: opacity 0.5s ease;
+        }
+
+        .btn-primary:hover::after {
+            opacity: 1;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-4px) scale(1.03) rotateX(5deg);
+            box-shadow: 
+                0 20px 50px rgba(139, 100, 70, 0.6),
+                0 0 60px rgba(168, 122, 90, 0.5),
+                0 0 100px rgba(139, 100, 70, 0.3),
+                0 0 0 1px rgba(255, 255, 255, 0.2) inset;
+        }
+
+        .btn-primary:active {
+            transform: translateY(-2px) scale(1.01);
+            box-shadow: 
+                0 8px 25px rgba(139, 100, 70, 0.5),
+                0 0 30px rgba(168, 122, 90, 0.4),
+                inset 0 3px 8px rgba(0, 0, 0, 0.3);
+        }
+
+        .btn-secondary {
+            background: rgba(30, 25, 20, 0.8);
+            border: 1px solid rgba(139, 100, 70, 0.3);
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .btn-secondary::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(135deg, transparent, rgba(139, 100, 70, 0.2));
+            opacity: 0;
+            transition: opacity 0.4s ease;
+        }
+
+        .btn-secondary:hover {
+            background: rgba(40, 32, 26, 0.9);
+            border-color: rgba(168, 122, 90, 0.5);
+            transform: translateY(-2px);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
+        }
+
+        .btn-secondary:hover::before {
+            opacity: 1;
+        }
+
+        .task-item {
+            animation: slideIn 0.6s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+            transform-origin: center;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(-40px) scale(0.9) rotateX(-10deg);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0) scale(1) rotateX(0deg);
+            }
+        }
+
+        .task-item:hover {
+            z-index: 10;
+        }
+
+        .completed-task {
+            opacity: 0.5;
+            transition: all 0.6s ease;
+            filter: grayscale(0.3);
+        }
+
+        .completed-task:hover {
+            opacity: 0.75;
+            filter: grayscale(0.1);
+        }
+
+        .completed-task .task-title {
+            text-decoration: line-through;
+            color: #666;
+            position: relative;
+        }
+
+        .completed-task .task-title::after {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 50%;
+            width: 0;
+            height: 2px;
+            background: linear-gradient(90deg, transparent, #8b6446, transparent);
+            animation: strikethrough 0.8s ease forwards;
+        }
+
+        @keyframes strikethrough {
+            from { 
+                width: 0; 
+                opacity: 0;
+            }
+            to { 
+                width: 100%; 
+                opacity: 1;
+            }
+        }
+
+        /* Task priority indicator */
+        .task-priority-high::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 0;
+            bottom: 0;
+            width: 4px;
+            background: linear-gradient(180deg, #ff6b6b, #ee5a6f);
+            box-shadow: 0 0 15px rgba(255, 107, 107, 0.6);
+        }
+
+        .task-priority-medium::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 0;
+            bottom: 0;
+            width: 4px;
+            background: linear-gradient(180deg, #ffd93d, #ffb347);
+            box-shadow: 0 0 15px rgba(255, 217, 61, 0.6);
+        }
+
+        /* Animated counter */
+        .stat-number {
+            display: inline-block;
+            font-variant-numeric: tabular-nums;
+            animation: countUp 1s ease-out;
+        }
+
+        @keyframes countUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* Drag and drop visual feedback */
+        .task-dragging {
+            opacity: 0.5;
+            transform: scale(0.95) rotate(5deg);
+            cursor: grabbing;
+        }
+
+        .task-drag-over {
+            border-color: rgba(168, 122, 90, 0.8);
+            background: rgba(168, 122, 90, 0.1);
+        }
+
+        /* Loading skeleton */
+        .skeleton {
+            background: linear-gradient(
+                90deg,
+                rgba(139, 100, 70, 0.1) 25%,
+                rgba(168, 122, 90, 0.2) 50%,
+                rgba(139, 100, 70, 0.1) 75%
+            );
+            background-size: 200% 100%;
+            animation: skeleton-loading 1.5s ease-in-out infinite;
+        }
+
+        @keyframes skeleton-loading {
+            0% { background-position: 200% 0; }
+            100% { background-position: -200% 0; }
+        }
+
+        /* Spotlight effect on hover */
+        .spotlight {
+            position: absolute;
+            width: 200px;
+            height: 200px;
+            background: radial-gradient(circle, rgba(168, 122, 90, 0.3), transparent 70%);
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+            mix-blend-mode: screen;
+        }
+
+        .glass-card:hover .spotlight {
+            opacity: 1;
+        }
+
+        input:focus, textarea:focus {
+            outline: none;
+            border-color: #a87a5a;
+            box-shadow: 
+                0 0 0 4px rgba(139, 100, 70, 0.15),
+                0 0 20px rgba(139, 100, 70, 0.3),
+                inset 0 2px 4px rgba(0, 0, 0, 0.1);
+            background: rgba(15, 12, 10, 0.9);
+        }
+
+        .tab-active {
+            background: linear-gradient(135deg, #a87a5a 0%, #8b6446 50%, #6b4e3d 100%);
+            color: white;
+            box-shadow: 
+                0 4px 15px rgba(139, 100, 70, 0.4),
+                inset 0 1px 0 rgba(255, 255, 255, 0.1);
+            transform: translateY(-2px);
+        }
+
+        .tab-button {
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+        }
+
+        .tab-button:not(.tab-active):hover {
+            background: rgba(139, 100, 70, 0.1);
+            transform: translateY(-1px);
+        }
+
+        .progress-bar {
+            transition: width 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 
+                0 0 20px rgba(168, 122, 90, 0.6),
+                0 0 40px rgba(139, 100, 70, 0.3);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .progress-bar::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(
+                90deg,
+                transparent,
+                rgba(255, 255, 255, 0.3),
+                transparent
+            );
+            animation: shimmer 2s infinite;
+        }
+
+        @keyframes shimmer {
+            to { left: 100%; }
+        }
+
+        .progress-container {
+            background: rgba(0, 0, 0, 0.4);
+            box-shadow: inset 0 2px 8px rgba(0, 0, 0, 0.3);
+        }
+
+        /* Circular progress */
+        .circular-progress {
+            width: 120px;
+            height: 120px;
+            border-radius: 50%;
+            background: conic-gradient(
+                from 0deg,
+                #8b6446 0%,
+                #a87a5a var(--progress),
+                rgba(139, 100, 70, 0.1) var(--progress)
+            );
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            animation: rotate-progress 2s ease-out;
+        }
+
+        @keyframes rotate-progress {
+            from { transform: rotate(-90deg); }
+            to { transform: rotate(0deg); }
+        }
+
+        .circular-progress::before {
+            content: '';
+            position: absolute;
+            inset: 10px;
+            border-radius: 50%;
+            background: rgba(18, 14, 11, 0.95);
+        }
+
+        .circular-progress-value {
+            position: relative;
+            z-index: 1;
+        }
+
+        .reminder-popup {
+            animation: bounceIn 0.8s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+            box-shadow: 
+                0 30px 80px rgba(0, 0, 0, 0.8),
+                0 0 60px rgba(139, 100, 70, 0.4);
+        }
+
+        @keyframes bounceIn {
+            0% {
+                transform: scale(0.3) rotate(-5deg);
+                opacity: 0;
+            }
+            50% {
+                transform: scale(1.08) rotate(2deg);
+            }
+            70% {
+                transform: scale(0.95) rotate(-1deg);
+            }
+            100% {
+                transform: scale(1) rotate(0deg);
+                opacity: 1;
+            }
+        }
+
+        .reminder-backdrop {
+            backdrop-filter: blur(10px);
+            background: rgba(0, 0, 0, 0.75);
+            animation: fadeInBackdrop 0.4s ease;
+        }
+
+        @keyframes fadeInBackdrop {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        .delete-btn {
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .delete-btn:hover {
+            color: #ff6b6b;
+            transform: scale(1.2) rotate(10deg);
+            filter: drop-shadow(0 0 8px rgba(255, 107, 107, 0.5));
+        }
+
+        .edit-btn {
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .edit-btn:hover {
+            color: #a87a5a;
+            transform: scale(1.2);
+            filter: drop-shadow(0 0 8px rgba(168, 122, 90, 0.5));
+        }
+
+        ::-webkit-scrollbar {
+            width: 10px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 10px;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: linear-gradient(180deg, #a87a5a 0%, #8b6446 50%, #6b4e3d 100%);
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(139, 100, 70, 0.5);
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: linear-gradient(180deg, #c89470 0%, #a87a5a 50%, #8b6446 100%);
+            box-shadow: 0 0 15px rgba(139, 100, 70, 0.8);
+        }
+
+        /* Particle effect */
+        @keyframes float {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-20px); }
+        }
+
+        .floating-particle {
+            animation: float 6s ease-in-out infinite;
+        }
+
+        /* Confetti animation */
+        .confetti {
+            position: fixed;
+            width: 10px;
+            height: 10px;
+            background: #8b6446;
+            position: absolute;
+            animation: confetti-fall 3s ease-out forwards;
+        }
+
+        @keyframes confetti-fall {
+            0% {
+                transform: translateY(0) rotateZ(0deg);
+                opacity: 1;
+            }
+            100% {
+                transform: translateY(100vh) rotateZ(720deg);
+                opacity: 0;
+            }
+        }
+
+        /* Ripple effect */
+        .ripple {
+            position: absolute;
+            border-radius: 50%;
+            background: rgba(168, 122, 90, 0.4);
+            transform: scale(0);
+            animation: ripple-animation 0.6s ease-out;
+            pointer-events: none;
+        }
+
+        @keyframes ripple-animation {
+            to {
+                transform: scale(4);
+                opacity: 0;
+            }
+        }
+
+        /* Advanced input glow */
+        input, textarea, select {
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        input:hover, textarea:hover, select:hover {
+            border-color: rgba(139, 100, 70, 0.5);
+            box-shadow: 0 0 15px rgba(139, 100, 70, 0.2);
+        }
+
+        /* Custom cursor */
+        .custom-cursor {
+            position: fixed;
+            width: 20px;
+            height: 20px;
+            border: 2px solid rgba(168, 122, 90, 0.6);
+            border-radius: 50%;
+            pointer-events: none;
+            z-index: 9999;
+            transition: all 0.15s ease;
+            mix-blend-mode: difference;
+        }
+
+        .custom-cursor-follower {
+            position: fixed;
+            width: 40px;
+            height: 40px;
+            border: 1px solid rgba(168, 122, 90, 0.3);
+            border-radius: 50%;
+            pointer-events: none;
+            z-index: 9998;
+            transition: all 0.3s ease;
+        }
+
+        .custom-cursor.active {
+            transform: scale(1.5);
+            background: rgba(168, 122, 90, 0.2);
+        }
+
+        /* Fix input focus */
+        input, textarea, select {
+            position: relative;
+            z-index: 10;
+        }
+
+        /* Neon glow text */
+        .neon-text {
+            text-shadow: 
+                0 0 10px rgba(168, 122, 90, 0.8),
+                0 0 20px rgba(139, 100, 70, 0.6),
+                0 0 30px rgba(168, 122, 90, 0.4);
+            animation: neon-pulse 2s ease-in-out infinite;
+        }
+
+        @keyframes neon-pulse {
+            0%, 100% {
+                text-shadow: 
+                    0 0 10px rgba(168, 122, 90, 0.8),
+                    0 0 20px rgba(139, 100, 70, 0.6),
+                    0 0 30px rgba(168, 122, 90, 0.4);
+            }
+            50% {
+                text-shadow: 
+                    0 0 20px rgba(168, 122, 90, 1),
+                    0 0 30px rgba(139, 100, 70, 0.8),
+                    0 0 40px rgba(168, 122, 90, 0.6);
+            }
+        }
+
+        /* Success celebration animation */
+        @keyframes celebration {
+            0%, 100% { transform: scale(1) rotate(0deg); }
+            25% { transform: scale(1.1) rotate(-5deg); }
+            50% { transform: scale(1.2) rotate(5deg); }
+            75% { transform: scale(1.1) rotate(-3deg); }
+        }
+
+        .celebrate {
+            animation: celebration 0.6s ease-in-out;
+        }
+
+        /* Animated counter */
+        .stat-number {
+            display: inline-block;
+            font-variant-numeric: tabular-nums;
+            animation: countUp 1s ease-out;
+        }
+
+        @keyframes countUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* Loading skeleton */
+        .skeleton {
+            background: linear-gradient(
+                90deg,
+                rgba(139, 100, 70, 0.1) 25%,
+                rgba(168, 122, 90, 0.2) 50%,
+                rgba(139, 100, 70, 0.1) 75%
+            );
+            background-size: 200% 100%;
+            animation: skeleton-loading 1.5s ease-in-out infinite;
+        }
+
+        @keyframes skeleton-loading {
+            0% { background-position: 200% 0; }
+            100% { background-position: -200% 0; }
+        }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect, useRef } = React;
+
+        const TaskManager = () => {
+            const [tasks, setTasks] = useState([]);
+            const [activeTab, setActiveTab] = useState('today');
+            const [showForm, setShowForm] = useState(false);
+            const [notification, setNotification] = useState(null);
+            const [showReminder, setShowReminder] = useState(false);
+            const [editingTask, setEditingTask] = useState(null);
+            
+            const [formData, setFormData] = useState({
+                title: '',
+                description: '',
+                deadline: '',
+                category: 'today'
+            });
+
+            const [searchQuery, setSearchQuery] = useState('');
+            const [showShortcuts, setShowShortcuts] = useState(false);
+
+            // Keyboard shortcuts
+            useEffect(() => {
+                const handleKeyPress = (e) => {
+                    // Ctrl/Cmd + K: Toggle new task form
+                    if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
+                        e.preventDefault();
+                        setShowForm(prev => !prev);
+                    }
+                    // Ctrl/Cmd + /: Show shortcuts
+                    if ((e.ctrlKey || e.metaKey) && e.key === '/') {
+                        e.preventDefault();
+                        setShowShortcuts(prev => !prev);
+                    }
+                    // Escape: Close modals
+                    if (e.key === 'Escape') {
+                        setShowForm(false);
+                        setShowReminder(false);
+                        setShowShortcuts(false);
+                    }
+                };
+
+                window.addEventListener('keydown', handleKeyPress);
+                return () => window.removeEventListener('keydown', handleKeyPress);
+            }, []);
+
+            // Create floating particles
+            useEffect(() => {
+                const particlesContainer = document.createElement('div');
+                particlesContainer.className = 'particles';
+                document.body.appendChild(particlesContainer);
+
+                for (let i = 0; i < 30; i++) {
+                    const particle = document.createElement('div');
+                    particle.className = 'particle';
+                    particle.style.left = Math.random() * 100 + '%';
+                    particle.style.animationDelay = Math.random() * 20 + 's';
+                    particle.style.animationDuration = (15 + Math.random() * 10) + 's';
+                    particlesContainer.appendChild(particle);
+                }
+
+                return () => {
+                    document.body.removeChild(particlesContainer);
+                };
+            }, []);
+
+            // Custom cursor effect
+            useEffect(() => {
+                const cursor = document.createElement('div');
+                cursor.className = 'custom-cursor';
+                const follower = document.createElement('div');
+                follower.className = 'custom-cursor-follower';
+                
+                document.body.appendChild(cursor);
+                document.body.appendChild(follower);
+
+                let mouseX = 0, mouseY = 0;
+                let followerX = 0, followerY = 0;
+                let isOverInput = false;
+
+                const moveCursor = (e) => {
+                    mouseX = e.clientX;
+                    mouseY = e.clientY;
+                    
+                    // Check if hovering over input, textarea, or select
+                    const target = e.target;
+                    isOverInput = target.tagName === 'INPUT' || 
+                                  target.tagName === 'TEXTAREA' || 
+                                  target.tagName === 'SELECT';
+                    
+                    if (!isOverInput) {
+                        cursor.style.left = mouseX - 10 + 'px';
+                        cursor.style.top = mouseY - 10 + 'px';
+                        cursor.style.opacity = '1';
+                        follower.style.opacity = '1';
+                    } else {
+                        cursor.style.opacity = '0';
+                        follower.style.opacity = '0';
+                    }
+                };
+
+                const animateFollower = () => {
+                    if (!isOverInput) {
+                        followerX += (mouseX - followerX) * 0.1;
+                        followerY += (mouseY - followerY) * 0.1;
+                        follower.style.left = followerX - 20 + 'px';
+                        follower.style.top = followerY - 20 + 'px';
+                    }
+                    requestAnimationFrame(animateFollower);
+                };
+
+                const handleMouseDown = () => {
+                    if (!isOverInput) cursor.classList.add('active');
+                };
+                const handleMouseUp = () => cursor.classList.remove('active');
+
+                document.addEventListener('mousemove', moveCursor);
+                document.addEventListener('mousedown', handleMouseDown);
+                document.addEventListener('mouseup', handleMouseUp);
+                animateFollower();
+
+                return () => {
+                    document.removeEventListener('mousemove', moveCursor);
+                    document.removeEventListener('mousedown', handleMouseDown);
+                    document.removeEventListener('mouseup', handleMouseUp);
+                    if (document.body.contains(cursor)) document.body.removeChild(cursor);
+                    if (document.body.contains(follower)) document.body.removeChild(follower);
+                };
+            }, []);
+
+            // 3D Tilt effect on cards
+            useEffect(() => {
+                const cards = document.querySelectorAll('.glass-card');
+                
+                cards.forEach(card => {
+                    const handleMouseMove = (e) => {
+                        // Don't apply tilt if hovering over input elements
+                        const target = e.target;
+                        if (target.tagName === 'INPUT' || 
+                            target.tagName === 'TEXTAREA' || 
+                            target.tagName === 'SELECT' ||
+                            target.tagName === 'BUTTON') {
+                            return;
+                        }
+
+                        const rect = card.getBoundingClientRect();
+                        const x = e.clientX - rect.left;
+                        const y = e.clientY - rect.top;
+                        
+                        const centerX = rect.width / 2;
+                        const centerY = rect.height / 2;
+                        
+                        const rotateX = (y - centerY) / 20;
+                        const rotateY = (centerX - x) / 20;
+                        
+                        card.style.transform = `perspective(1000px) rotateX(${rotateX}deg) rotateY(${rotateY}deg) translateY(-8px) scale(1.02)`;
+                    };
+                    
+                    const handleMouseLeave = () => {
+                        card.style.transform = '';
+                    };
+
+                    card.addEventListener('mousemove', handleMouseMove);
+                    card.addEventListener('mouseleave', handleMouseLeave);
+                });
+
+                // Cleanup
+                return () => {
+                    cards.forEach(card => {
+                        card.removeEventListener('mousemove', () => {});
+                        card.removeEventListener('mouseleave', () => {});
+                    });
+                };
+            }, [tasks, activeTab]);
+
+            // Load tasks from localStorage
+            useEffect(() => {
+                const savedTasks = localStorage.getItem('tasks');
+                if (savedTasks) {
+                    setTasks(JSON.parse(savedTasks));
+                }
+
+                // Check for last reminder date
+                const lastReminder = localStorage.getItem('lastReminder');
+                const today = new Date().toDateString();
+                
+                if (lastReminder !== today) {
+                    // Show reminder after 2 seconds
+                    setTimeout(() => {
+                        checkDailyReminder();
+                    }, 2000);
+                }
+            }, []);
+
+            // Save tasks to localStorage
+            useEffect(() => {
+                if (tasks.length > 0) {
+                    localStorage.setItem('tasks', JSON.stringify(tasks));
+                }
+            }, [tasks]);
+
+            const checkDailyReminder = () => {
+                const incompleteTasks = tasks.filter(task => !task.completed);
+                if (incompleteTasks.length > 0) {
+                    setShowReminder(true);
+                    localStorage.setItem('lastReminder', new Date().toDateString());
+                }
+            };
+
+            const createConfetti = (element) => {
+                const colors = ['#a87a5a', '#8b6446', '#c89470', '#6b4e3d', '#d4a574'];
+                const rect = element.getBoundingClientRect();
+                
+                for (let i = 0; i < 30; i++) {
+                    const confetti = document.createElement('div');
+                    confetti.className = 'confetti';
+                    confetti.style.left = rect.left + rect.width / 2 + 'px';
+                    confetti.style.top = rect.top + rect.height / 2 + 'px';
+                    confetti.style.background = colors[Math.floor(Math.random() * colors.length)];
+                    confetti.style.transform = `translate(${(Math.random() - 0.5) * 200}px, ${(Math.random() - 0.5) * 200}px) rotate(${Math.random() * 360}deg)`;
+                    document.body.appendChild(confetti);
+                    
+                    setTimeout(() => confetti.remove(), 3000);
+                }
+            };
+
+            const addTask = () => {
+                if (!formData.title.trim()) {
+                    showNotification('⚠️ Please enter a task title', 'warning');
+                    return;
+                }
+
+                const newTask = {
+                    id: Date.now(),
+                    ...formData,
+                    completed: false,
+                    createdAt: new Date().toISOString(),
+                    completedAt: null,
+                    estimatedTime: formData.estimatedTime || null
+                };
+
+                setTasks([newTask, ...tasks]);
+                setFormData({ title: '', description: '', deadline: '', category: 'today' });
+                setShowForm(false);
+                playSound('add');
+                showNotification('✨ Task added successfully!', 'success');
+            };
+
+            const updateTask = () => {
+                if (!formData.title.trim()) {
+                    showNotification('⚠️ Please enter a task title', 'warning');
+                    return;
+                }
+
+                setTasks(tasks.map(task => 
+                    task.id === editingTask.id 
+                        ? { ...task, ...formData }
+                        : task
+                ));
+                
+                setEditingTask(null);
+                setFormData({ title: '', description: '', deadline: '', category: 'today' });
+                setShowForm(false);
+                showNotification('✅ Task updated successfully!', 'success');
+            };
+
+            const toggleTask = (id, event) => {
+                const task = tasks.find(t => t.id === id);
+                const wasCompleted = task.completed;
+                
+                setTasks(tasks.map(task => 
+                    task.id === id 
+                        ? { 
+                            ...task, 
+                            completed: !task.completed,
+                            completedAt: !task.completed ? new Date().toISOString() : null
+                          }
+                        : task
+                ));
+
+                if (!wasCompleted) {
+                    // Add celebration class to the card
+                    const taskCard = event.target.closest('.glass-card');
+                    if (taskCard) {
+                        taskCard.classList.add('celebrate');
+                        setTimeout(() => taskCard.classList.remove('celebrate'), 600);
+                    }
+                    
+                    createConfetti(event.target);
+                    playSound('complete');
+                    
+                    // Show enhanced notification
+                    const messages = [
+                        '✅ Excellent! Task completed successfully.',
+                        '🎉 Great job! One more task done.',
+                        '⚡ Amazing! Keep up the momentum.',
+                        '🌟 Fantastic! You\'re on fire today.',
+                        '💪 Outstanding! Task crushed.'
+                    ];
+                    const randomMessage = messages[Math.floor(Math.random() * messages.length)];
+                    showNotification(randomMessage, 'success');
+                }
+            };
+
+            const deleteTask = (id) => {
+                setTasks(tasks.filter(task => task.id !== id));
+                showNotification('🗑️ Task deleted', 'info');
+            };
+
+            const startEdit = (task) => {
+                setEditingTask(task);
+                setFormData({
+                    title: task.title,
+                    description: task.description,
+                    deadline: task.deadline,
+                    category: task.category
+                });
+                setShowForm(true);
+            };
+
+            const showNotification = (message, type) => {
+                setNotification({ message, type });
+                setTimeout(() => {
+                    setNotification(null);
+                }, 4000);
+            };
+
+            const getGreeting = () => {
+                const hour = new Date().getHours();
+                if (hour < 12) return '☀️ Good Morning';
+                if (hour < 17) return '🌤️ Good Afternoon';
+                if (hour < 21) return '🌆 Good Evening';
+                return '🌙 Good Night';
+            };
+
+            const playSound = (type) => {
+                // Optional: Add sound effects
+                const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                const oscillator = audioContext.createOscillator();
+                const gainNode = audioContext.createGain();
+                
+                oscillator.connect(gainNode);
+                gainNode.connect(audioContext.destination);
+                
+                if (type === 'complete') {
+                    oscillator.frequency.setValueAtTime(523.25, audioContext.currentTime); // C5
+                    oscillator.frequency.setValueAtTime(659.25, audioContext.currentTime + 0.1); // E5
+                    oscillator.frequency.setValueAtTime(783.99, audioContext.currentTime + 0.2); // G5
+                } else if (type === 'add') {
+                    oscillator.frequency.setValueAtTime(440, audioContext.currentTime); // A4
+                }
+                
+                gainNode.gain.setValueAtTime(0.1, audioContext.currentTime);
+                gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.3);
+                
+                oscillator.start(audioContext.currentTime);
+                oscillator.stop(audioContext.currentTime + 0.3);
+            };
+
+            const getFilteredTasks = () => {
+                const now = new Date();
+                const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+                
+                let filtered = tasks.filter(task => {
+                    if (activeTab === 'completed') return task.completed;
+                    if (activeTab === 'today') {
+                        if (task.completed) return false;
+                        if (!task.deadline) return task.category === 'today';
+                        const taskDate = new Date(task.deadline);
+                        return taskDate.toDateString() === today.toDateString();
+                    }
+                    if (activeTab === 'upcoming') {
+                        if (task.completed) return false;
+                        if (!task.deadline) return task.category === 'upcoming';
+                        const taskDate = new Date(task.deadline);
+                        return taskDate > today;
+                    }
+                    return false;
+                });
+
+                // Apply search filter
+                if (searchQuery.trim()) {
+                    filtered = filtered.filter(task => 
+                        task.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                        (task.description && task.description.toLowerCase().includes(searchQuery.toLowerCase()))
+                    );
+                }
+
+                return filtered;
+            };
+
+            const getProgress = () => {
+                if (tasks.length === 0) return 0;
+                const completed = tasks.filter(t => t.completed).length;
+                return Math.round((completed / tasks.length) * 100);
+            };
+
+            const filteredTasks = getFilteredTasks();
+            const progress = getProgress();
+
+            return (
+                <div className="min-h-screen p-4 md:p-8">
+                    <div className="max-w-6xl mx-auto">
+                        {/* Header */}
+                        <div className="glass-card rounded-3xl p-8 mb-8 relative overflow-hidden">
+                            <div className="absolute top-0 right-0 w-64 h-64 bg-gradient-to-br from-amber-900/20 to-transparent rounded-full blur-3xl"></div>
+                            <div className="relative z-10">
+                                <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-6">
+                                    <div>
+                                        <div className="flex items-center gap-3 mb-2">
+                                            <div className="w-12 h-12 bg-gradient-to-br from-amber-700 to-amber-900 rounded-2xl flex items-center justify-center shadow-lg">
+                                                <i className="fas fa-check-circle text-white text-xl"></i>
+                                            </div>
+                                            <h1 className="text-4xl md:text-5xl font-bold text-white" style={{fontFamily: 'Playfair Display, serif'}}>
+                                                Task Manager
+                                            </h1>
+                                        </div>
+                                        <p className="text-gray-400 text-lg ml-15">
+                                            {getGreeting()} • Organize your day with elegance
+                                        </p>
+                                    </div>
+                                    <button
+                                        onClick={() => {
+                                            setShowForm(!showForm);
+                                            setEditingTask(null);
+                                            setFormData({ title: '', description: '', deadline: '', category: 'today' });
+                                        }}
+                                        className="btn-primary text-white px-8 py-4 rounded-2xl font-semibold flex items-center gap-3 self-start shadow-lg"
+                                    >
+                                        <i className="fas fa-plus"></i>
+                                        Add New Task
+                                    </button>
+                                    <button
+                                        onClick={() => setShowShortcuts(true)}
+                                        className="btn-secondary text-white p-4 rounded-2xl shadow-lg"
+                                        title="Keyboard Shortcuts (Ctrl+/)"
+                                    >
+                                        <i className="fas fa-keyboard text-xl"></i>
+                                    </button>
+                                </div>
+
+                                {/* Search Bar */}
+                                <div className="mt-6 relative">
+                                    <div className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-500">
+                                        <i className="fas fa-search"></i>
+                                    </div>
+                                    <input
+                                        type="text"
+                                        placeholder="Search tasks... (Ctrl+K to add new)"
+                                        value={searchQuery}
+                                        onChange={(e) => setSearchQuery(e.target.value)}
+                                        className="w-full bg-black/40 text-white pl-12 pr-6 py-4 rounded-2xl border border-gray-700/50 transition-all placeholder-gray-600"
+                                    />
+                                    {searchQuery && (
+                                        <button
+                                            onClick={() => setSearchQuery('')}
+                                            className="absolute right-4 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-amber-700 transition-colors"
+                                        >
+                                            <i className="fas fa-times"></i>
+                                        </button>
+                                    )}
+                                </div>
+
+                                {/* Stats Row */}
+                                <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mt-8">
+                                    <div className="bg-gradient-to-br from-amber-900/20 to-transparent p-4 rounded-2xl border border-amber-900/30 hover:border-amber-800/50 transition-all hover:scale-105">
+                                        <div className="text-gray-400 text-sm mb-1">Total Tasks</div>
+                                        <div className="stat-number text-3xl font-bold text-white">{tasks.length}</div>
+                                    </div>
+                                    <div className="bg-gradient-to-br from-green-900/20 to-transparent p-4 rounded-2xl border border-green-900/30 hover:border-green-800/50 transition-all hover:scale-105">
+                                        <div className="text-gray-400 text-sm mb-1">Completed</div>
+                                        <div className="stat-number text-3xl font-bold text-green-400">{tasks.filter(t => t.completed).length}</div>
+                                    </div>
+                                    <div className="bg-gradient-to-br from-orange-900/20 to-transparent p-4 rounded-2xl border border-orange-900/30 hover:border-orange-800/50 transition-all hover:scale-105">
+                                        <div className="text-gray-400 text-sm mb-1">Pending</div>
+                                        <div className="stat-number text-3xl font-bold text-orange-400">{tasks.filter(t => !t.completed).length}</div>
+                                    </div>
+                                    <div className="bg-gradient-to-br from-purple-900/20 to-transparent p-4 rounded-2xl border border-purple-900/30 hover:border-purple-800/50 transition-all hover:scale-105">
+                                        <div className="text-gray-400 text-sm mb-1">Completion</div>
+                                        <div className="stat-number text-3xl font-bold neon-text" style={{color: '#a87a5a'}}>{progress}%</div>
+                                    </div>
+                                </div>
+
+                                {/* Progress Bar */}
+                                <div className="mt-6">
+                                    <div className="flex justify-between items-center text-sm text-gray-400 mb-3">
+                                        <span className="font-semibold flex items-center gap-2">
+                                            <i className="fas fa-chart-line"></i>
+                                            Overall Progress
+                                        </span>
+                                        <span className="text-amber-700 font-bold text-base">{progress}%</span>
+                                    </div>
+                                    <div className="progress-container h-3 rounded-full overflow-hidden relative">
+                                        <div 
+                                            className="progress-bar h-full bg-gradient-to-r from-amber-600 via-amber-700 to-amber-900 rounded-full"
+                                            style={{ width: `${progress}%` }}
+                                        />
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Task Form */}
+                        {showForm && (
+                            <div className="glass-card rounded-3xl p-8 mb-8 task-item relative overflow-hidden">
+                                <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-amber-700 to-transparent"></div>
+                                <h2 className="text-2xl font-bold text-white mb-6 flex items-center gap-3">
+                                    <div className="w-10 h-10 bg-gradient-to-br from-amber-700 to-amber-900 rounded-xl flex items-center justify-center">
+                                        <i className={`fas ${editingTask ? 'fa-edit' : 'fa-plus-circle'} text-white`}></i>
+                                    </div>
+                                    {editingTask ? 'Edit Task' : 'Create New Task'}
+                                </h2>
+                                <div className="space-y-5">
+                                    <div>
+                                        <label className="text-gray-400 text-sm font-semibold mb-2 block">Task Title *</label>
+                                        <input
+                                            type="text"
+                                            placeholder="Enter your task title..."
+                                            value={formData.title}
+                                            onChange={(e) => setFormData({...formData, title: e.target.value})}
+                                            className="w-full bg-black/40 text-white px-6 py-4 rounded-xl border border-gray-700/50 transition-all placeholder-gray-600"
+                                        />
+                                    </div>
+                                    <div>
+                                        <label className="text-gray-400 text-sm font-semibold mb-2 block">Description</label>
+                                        <textarea
+                                            placeholder="Add some details about your task..."
+                                            value={formData.description}
+                                            onChange={(e) => setFormData({...formData, description: e.target.value})}
+                                            className="w-full bg-black/40 text-white px-6 py-4 rounded-xl border border-gray-700/50 h-32 resize-none transition-all placeholder-gray-600"
+                                        />
+                                    </div>
+                                    <div className="grid md:grid-cols-2 gap-4">
+                                        <div>
+                                            <label className="text-gray-400 text-sm font-semibold mb-2 block">Deadline</label>
+                                            <input
+                                                type="date"
+                                                value={formData.deadline}
+                                                onChange={(e) => setFormData({...formData, deadline: e.target.value})}
+                                                className="w-full bg-black/40 text-white px-6 py-4 rounded-xl border border-gray-700/50 transition-all"
+                                            />
+                                        </div>
+                                        <div>
+                                            <label className="text-gray-400 text-sm font-semibold mb-2 block">Category</label>
+                                            <select
+                                                value={formData.category}
+                                                onChange={(e) => setFormData({...formData, category: e.target.value})}
+                                                className="w-full bg-black/40 text-white px-6 py-4 rounded-xl border border-gray-700/50 transition-all"
+                                            >
+                                                <option value="today">📅 Today</option>
+                                                <option value="upcoming">🔜 Upcoming</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                    <div className="flex gap-4 pt-4">
+                                        <button
+                                            onClick={editingTask ? updateTask : addTask}
+                                            className="btn-primary text-white px-8 py-4 rounded-xl font-semibold flex-1"
+                                        >
+                                            <i className={`fas ${editingTask ? 'fa-save' : 'fa-plus'} mr-2`}></i>
+                                            {editingTask ? 'Update Task' : 'Add Task'}
+                                        </button>
+                                        <button
+                                            onClick={() => {
+                                                setShowForm(false);
+                                                setEditingTask(null);
+                                                setFormData({ title: '', description: '', deadline: '', category: 'today' });
+                                            }}
+                                            className="btn-secondary text-white px-8 py-4 rounded-xl font-semibold transition-all"
+                                        >
+                                            Cancel
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+
+                        {/* Tabs */}
+                        <div className="glass-card rounded-3xl p-4 mb-8">
+                            <div className="flex gap-3">
+                                {[
+                                    { id: 'today', icon: 'fa-calendar-day', label: 'Today' },
+                                    { id: 'upcoming', icon: 'fa-clock', label: 'Upcoming' },
+                                    { id: 'completed', icon: 'fa-check-double', label: 'Completed' }
+                                ].map(tab => (
+                                    <button
+                                        key={tab.id}
+                                        onClick={() => setActiveTab(tab.id)}
+                                        className={`tab-button flex-1 py-4 px-6 rounded-2xl font-semibold transition-all flex items-center justify-center gap-2 ${
+                                            activeTab === tab.id 
+                                                ? 'tab-active' 
+                                                : 'text-gray-400 hover:bg-gray-800/50'
+                                        }`}
+                                    >
+                                        <i className={`fas ${tab.icon}`}></i>
+                                        <span>{tab.label}</span>
+                                        <span className={`ml-2 px-2.5 py-0.5 rounded-full text-xs font-bold ${
+                                            activeTab === tab.id 
+                                                ? 'bg-white/20' 
+                                                : 'bg-gray-700/50'
+                                        }`}>
+                                            {getFilteredTasks().length}
+                                        </span>
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
+
+                        {/* Tasks List */}
+                        <div className="space-y-4">
+                            {filteredTasks.length === 0 ? (
+                                <div className="glass-card rounded-3xl p-16 text-center relative overflow-hidden">
+                                    <div className="absolute inset-0 bg-gradient-to-br from-amber-900/10 to-transparent"></div>
+                                    <div className="relative z-10">
+                                        <div className="w-24 h-24 bg-gradient-to-br from-amber-900/30 to-amber-800/20 rounded-3xl flex items-center justify-center mx-auto mb-6 shadow-lg">
+                                            <i className="fas fa-inbox text-6xl text-amber-700/50"></i>
+                                        </div>
+                                        <h3 className="text-2xl font-bold text-white mb-2">No tasks found</h3>
+                                        <p className="text-gray-400 text-lg mb-6">
+                                            {activeTab === 'today' && "You don't have any tasks scheduled for today"}
+                                            {activeTab === 'upcoming' && "No upcoming tasks at the moment"}
+                                            {activeTab === 'completed' && "No completed tasks yet"}
+                                        </p>
+                                        {activeTab !== 'completed' && (
+                                            <button
+                                                onClick={() => setShowForm(true)}
+                                                className="btn-primary text-white px-8 py-3 rounded-xl font-semibold inline-flex items-center gap-2"
+                                            >
+                                                <i className="fas fa-plus"></i>
+                                                Create your first task
+                                            </button>
+                                        )}
+                                    </div>
+                                </div>
+                            ) : (
+                                filteredTasks.map(task => (
+                                    <div
+                                        key={task.id}
+                                        className={`glass-card rounded-2xl p-6 task-item group relative overflow-hidden ${
+                                            task.completed ? 'completed-task' : ''
+                                        }`}
+                                    >
+                                        <div className="absolute top-0 left-0 w-1 h-full bg-gradient-to-b from-amber-700 to-amber-900 opacity-0 group-hover:opacity-100 transition-opacity"></div>
+                                        <div className="flex items-start gap-4">
+                                            <input
+                                                type="checkbox"
+                                                checked={task.completed}
+                                                onChange={(e) => toggleTask(task.id, e)}
+                                                className="task-checkbox mt-1 flex-shrink-0"
+                                            />
+                                            <div className="flex-1 min-w-0">
+                                                <div className="flex items-start justify-between gap-4 mb-2">
+                                                    <h3 className="task-title text-xl font-semibold text-white flex-1">
+                                                        {task.title}
+                                                    </h3>
+                                                    <div className="flex gap-2 flex-shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
+                                                        <button
+                                                            onClick={() => startEdit(task)}
+                                                            className="edit-btn text-gray-400 hover:text-amber-700 p-2 transition-all rounded-lg hover:bg-amber-900/20"
+                                                            title="Edit task"
+                                                        >
+                                                            <i className="fas fa-edit text-lg"></i>
+                                                        </button>
+                                                        <button
+                                                            onClick={() => deleteTask(task.id)}
+                                                            className="delete-btn text-gray-400 p-2 rounded-lg hover:bg-red-900/20"
+                                                            title="Delete task"
+                                                        >
+                                                            <i className="fas fa-trash text-lg"></i>
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                                {task.description && (
+                                                    <p className="text-gray-400 mb-3 text-sm leading-relaxed">
+                                                        {task.description}
+                                                    </p>
+                                                )}
+                                                <div className="flex flex-wrap gap-3 text-sm">
+                                                    {task.deadline && (
+                                                        <span className="bg-amber-900/20 text-amber-700 px-3 py-1.5 rounded-lg flex items-center gap-2 border border-amber-900/30 hover:border-amber-800/50 transition-all">
+                                                            <i className="far fa-calendar"></i>
+                                                            {new Date(task.deadline).toLocaleDateString('en-US', {
+                                                                month: 'short',
+                                                                day: 'numeric',
+                                                                year: 'numeric'
+                                                            })}
+                                                        </span>
+                                                    )}
+                                                    <span className="bg-gray-800/50 text-gray-400 px-3 py-1.5 rounded-lg flex items-center gap-2 hover:bg-gray-800/70 transition-all">
+                                                        <i className="far fa-clock"></i>
+                                                        Created {new Date(task.createdAt).toLocaleDateString('en-US', {
+                                                            month: 'short',
+                                                            day: 'numeric'
+                                                        })}
+                                                    </span>
+                                                    {task.completed && task.completedAt && (
+                                                        <span className="bg-green-900/20 text-green-400 px-3 py-1.5 rounded-lg flex items-center gap-2 border border-green-900/30">
+                                                            <i className="fas fa-check-circle"></i>
+                                                            Done {new Date(task.completedAt).toLocaleDateString('en-US', {
+                                                                month: 'short',
+                                                                day: 'numeric'
+                                                            })}
+                                                        </span>
+                                                    )}
+                                                    <span className={`px-3 py-1.5 rounded-lg flex items-center gap-2 transition-all hover:scale-105 ${
+                                                        task.category === 'today' 
+                                                            ? 'bg-blue-900/20 text-blue-400 border border-blue-900/30 hover:border-blue-800/50' 
+                                                            : 'bg-purple-900/20 text-purple-400 border border-purple-900/30 hover:border-purple-800/50'
+                                                    }`}>
+                                                        <i className={`fas ${task.category === 'today' ? 'fa-calendar-day' : 'fa-clock'}`}></i>
+                                                        {task.category.charAt(0).toUpperCase() + task.category.slice(1)}
+                                                    </span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                ))
+                            )}
+                        </div>
+                    </div>
+
+                    {/* Notification */}
+                    {notification && (
+                        <div className="fixed top-8 right-8 z-50 notification max-w-md">
+                            <div className={`glass-card rounded-2xl px-6 py-5 shadow-2xl border-l-4 ${
+                                notification.type === 'success' ? 'border-green-500 bg-green-900/20' : 
+                                notification.type === 'warning' ? 'border-yellow-500 bg-yellow-900/20' : 
+                                'border-blue-500 bg-blue-900/20'
+                            }`}>
+                                <div className="flex items-center gap-4">
+                                    <div className={`w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0 ${
+                                        notification.type === 'success' ? 'bg-green-500/20' : 
+                                        notification.type === 'warning' ? 'bg-yellow-500/20' : 
+                                        'bg-blue-500/20'
+                                    }`}>
+                                        <span className="text-2xl">
+                                            {notification.type === 'success' ? '✅' : 
+                                             notification.type === 'warning' ? '⚠️' : 
+                                             'ℹ️'}
+                                        </span>
+                                    </div>
+                                    <p className="text-white font-medium text-base flex-1">
+                                        {notification.message}
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
+                    {/* Daily Reminder Popup */}
+                    {showReminder && (
+                        <div className="fixed inset-0 reminder-backdrop flex items-center justify-center z-50 p-4">
+                            <div className="glass-card rounded-3xl p-10 max-w-md w-full reminder-popup relative overflow-hidden">
+                                <div className="absolute top-0 left-0 right-0 h-2 bg-gradient-to-r from-amber-700 via-amber-600 to-amber-700"></div>
+                                <div className="text-center relative z-10">
+                                    <div className="w-24 h-24 bg-gradient-to-br from-amber-700 to-amber-900 rounded-3xl flex items-center justify-center mx-auto mb-6 shadow-2xl floating-particle">
+                                        <i className="fas fa-bell text-5xl text-white"></i>
+                                    </div>
+                                    <h2 className="text-3xl font-bold text-white mb-3" style={{fontFamily: 'Playfair Display, serif'}}>
+                                        Daily Reminder
+                                    </h2>
+                                    <div className="bg-amber-900/20 border border-amber-900/30 rounded-2xl p-4 mb-6">
+                                        <div className="text-5xl font-bold text-amber-500 mb-1">
+                                            {tasks.filter(t => !t.completed).length}
+                                        </div>
+                                        <p className="text-gray-300 text-sm">
+                                            Unfinished Tasks
+                                        </p>
+                                    </div>
+                                    <p className="text-gray-300 mb-8 text-lg leading-relaxed">
+                                        Time to make today productive! Let's check off those tasks one by one.
+                                    </p>
+                                    <button
+                                        onClick={() => setShowReminder(false)}
+                                        className="btn-primary text-white px-10 py-5 rounded-2xl font-semibold w-full text-lg shadow-xl"
+                                    >
+                                        <i className="fas fa-rocket mr-3"></i>
+                                        Let's Get Started
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
+                    {/* Keyboard Shortcuts Modal */}
+                    {showShortcuts && (
+                        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4" onClick={() => setShowShortcuts(false)}>
+                            <div className="glass-card rounded-3xl p-8 max-w-lg w-full" onClick={(e) => e.stopPropagation()}>
+                                <div className="flex items-center justify-between mb-6">
+                                    <h2 className="text-2xl font-bold text-white flex items-center gap-3">
+                                        <i className="fas fa-keyboard text-amber-700"></i>
+                                        Keyboard Shortcuts
+                                    </h2>
+                                    <button 
+                                        onClick={() => setShowShortcuts(false)}
+                                        className="text-gray-400 hover:text-white transition-colors p-2"
+                                    >
+                                        <i className="fas fa-times text-xl"></i>
+                                    </button>
+                                </div>
+                                <div className="space-y-3">
+                                    <div className="flex items-center justify-between p-4 bg-black/30 rounded-xl">
+                                        <span className="text-gray-300">Add New Task</span>
+                                        <kbd className="px-3 py-2 bg-gray-800 text-amber-700 rounded-lg font-mono text-sm border border-gray-700">Ctrl + K</kbd>
+                                    </div>
+                                    <div className="flex items-center justify-between p-4 bg-black/30 rounded-xl">
+                                        <span className="text-gray-300">Show Shortcuts</span>
+                                        <kbd className="px-3 py-2 bg-gray-800 text-amber-700 rounded-lg font-mono text-sm border border-gray-700">Ctrl + /</kbd>
+                                    </div>
+                                    <div className="flex items-center justify-between p-4 bg-black/30 rounded-xl">
+                                        <span className="text-gray-300">Close Modal</span>
+                                        <kbd className="px-3 py-2 bg-gray-800 text-amber-700 rounded-lg font-mono text-sm border border-gray-700">Esc</kbd>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+                </div>
+            );
+        };
+
+        ReactDOM.render(<TaskManager />, document.getElementById('root'));
+    </script>
+</body>
+</html>
